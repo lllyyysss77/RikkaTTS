@@ -1,0 +1,5 @@
+{
+  "name": "SiliconFlow TTS Client",
+  "description": "A client for SiliconFlow Voice Generation API.",
+  "requestFramePermissions": []
+}
