@@ -1,3 +1,6 @@
+// Add type declaration for process to satisfy TypeScript in Vite environment
+declare const process: { env: { [key: string]: string | undefined } };
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { AudioPlayer } from './components/AudioPlayer';

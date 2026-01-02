@@ -1,3 +1,6 @@
+// Add type declaration for process to satisfy TypeScript in Vite environment
+declare const process: { env: { [key: string]: string | undefined } };
+
 import { TTSModelId, Voice } from "../types";
 
 const BASE_URL = 'https://api.siliconflow.cn/v1';

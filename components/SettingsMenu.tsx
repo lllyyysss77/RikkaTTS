@@ -144,7 +144,8 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({ isOpen, onClose, api
     onLog(`Attempting delete for: ${uri}`, 'info');
 
     try {
-      const result = await deleteCustomVoice(uri, apiKey);
+      // Fixed: Removed unused 'result' variable
+      await deleteCustomVoice(uri, apiKey);
       onLog(`Deletion successful`, 'success');
       
       // Update local state

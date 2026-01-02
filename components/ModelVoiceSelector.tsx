@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Mic, Box, RefreshCw } from 'lucide-react';
-import { TTS_MODELS, TTSModelId, Voice, SYSTEM_VOICES } from '../types';
+import { X, Check, Box, RefreshCw } from 'lucide-react';
+import { TTS_MODELS, TTSModelId, Voice } from '../types';
 import { fetchCustomVoices } from '../services/geminiService';
 
 interface ModelVoiceSelectorProps {

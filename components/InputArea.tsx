@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Loader2, Zap, Square } from 'lucide-react';
+import { Send, Loader2, Zap } from 'lucide-react';
 import { calculateCost, formatCost, getByteLength } from '../utils/audioUtils';
 
 interface InputAreaProps {
