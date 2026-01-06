@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Zap, BookOpen, OctagonX } from 'lucide-react';
+import { Send, Zap, BookOpen, Square } from 'lucide-react';
 import { calculateCost, formatCost, getByteLength } from '../utils/audioUtils';
 
 interface InputAreaProps {
@@ -108,7 +108,7 @@ export const InputArea: React.FC<InputAreaProps> = ({ onGenerate, onStop, isLoad
                   {isLoading ? (
                     <>
                       <span>停止</span>
-                      <OctagonX className="w-3.5 h-3.5" />
+                      <Square className="w-3.5 h-3.5 fill-current" />
                     </>
                   ) : (
                     <>

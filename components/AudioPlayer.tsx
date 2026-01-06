@@ -151,9 +151,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               
               // Rounded top bars using cast to any to avoid TS errors on older envs
               ctx.beginPath();
-              // x, y, width, height, radius
-              if ('roundRect' in ctx) {
-                 (ctx as any).roundRect(x, canvas.height - barHeight, barWidth, barHeight, [4, 4, 0, 0]);
+              
+              // We cast ctx to any to support roundRect which might be missing in older TS definitions
+              const ctxAny = ctx as any;
+              
+              if (typeof ctxAny.roundRect === 'function') {
+                 ctxAny.roundRect(x, canvas.height - barHeight, barWidth, barHeight, [4, 4, 0, 0]);
               } else {
                  ctx.rect(x, canvas.height - barHeight, barWidth, barHeight);
               }
