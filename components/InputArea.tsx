@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Loader2, Zap, Sparkles, BookOpen } from 'lucide-react';
+import { Send, Zap, BookOpen, OctagonX } from 'lucide-react';
 import { calculateCost, formatCost, getByteLength } from '../utils/audioUtils';
 
 interface InputAreaProps {
@@ -88,18 +88,27 @@ export const InputArea: React.FC<InputAreaProps> = ({ onGenerate, onStop, isLoad
                 </button>
 
                 <button
-                  onClick={() => handleSubmit()}
-                  disabled={!text.trim()}
+                  onClick={(e) => {
+                      if (isLoading) {
+                          e.preventDefault();
+                          onStop();
+                      } else {
+                          handleSubmit(e);
+                      }
+                  }}
+                  disabled={!text.trim() && !isLoading}
                   className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg font-medium transition-all duration-300 ${
-                    text.trim()
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-200 hover:shadow-lg hover:scale-105 active:scale-95' 
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    isLoading
+                      ? 'bg-red-500 text-white shadow-md shadow-red-200 hover:bg-red-600 active:scale-95'
+                      : text.trim()
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-200 hover:shadow-lg hover:scale-105 active:scale-95' 
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
                 >
                   {isLoading ? (
                     <>
-                      <span>生成中</span>
-                      <Send className="w-3.5 h-3.5" />
+                      <span>停止</span>
+                      <OctagonX className="w-3.5 h-3.5" />
                     </>
                   ) : (
                     <>

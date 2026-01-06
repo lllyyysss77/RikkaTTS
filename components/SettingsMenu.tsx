@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, List, Key, ChevronLeft, RefreshCw, Wand2, Loader2, AlertTriangle, Terminal, Scissors, Zap, Eraser, Video, FileAudio } from 'lucide-react';
+import { X, Upload, Key, ChevronLeft, RefreshCw, Wand2, Loader2, Terminal, Scissors, Zap, Eraser, Video, FileAudio } from 'lucide-react';
 import { uploadCustomVoice, transcribeAudio } from '../services/geminiService';
 import { extractAudioFromVideo } from '../utils/audioUtils';
-import { TTS_MODELS, TTSModelId, Voice } from '../types';
+import { TTS_MODELS, TTSModelId } from '../types';
 
 interface SettingsMenuProps {
   isOpen: boolean;
@@ -50,7 +50,12 @@ export const SettingsMenu: React.FC<SettingsMenuProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setView(initialView);
+      // If 'list' or other unknown views are passed, default to 'main' locally since we don't have a list view here
+      if (initialView === 'upload') {
+          setView('upload');
+      } else {
+          setView('main');
+      }
       setConfirmClearCache(false);
     } else {
       setTimeout(() => setView('main'), 300);

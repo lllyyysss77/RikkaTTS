@@ -149,7 +149,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
               ctx.fillStyle = gradient;
               
-              // Rounded top bars
+              // Rounded top bars using cast to any to avoid TS errors on older envs
               ctx.beginPath();
               // x, y, width, height, radius
               if ('roundRect' in ctx) {

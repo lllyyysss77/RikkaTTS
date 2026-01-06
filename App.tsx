@@ -50,7 +50,7 @@ const App: React.FC = () => {
   // UI State
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsInitialView, setSettingsInitialView] = useState<'main' | 'upload' | 'list'>('main');
+  const [settingsInitialView, setSettingsInitialView] = useState<'main' | 'upload'>('main');
 
   // Debug Console Visibility
   const [showConsole, setShowConsole] = useState(() => {
@@ -191,7 +191,7 @@ const App: React.FC = () => {
       addLog("All history cleared.", 'success');
   };
 
-  const handleOpenSettings = (view: 'upload' | 'list') => {
+  const handleOpenSettings = (view: 'upload') => {
       setIsSelectorOpen(false);
       setSettingsInitialView(view);
       setIsSettingsOpen(true);
@@ -213,17 +213,6 @@ const App: React.FC = () => {
       if (currentIndex === -1) return;
 
       // In the current list structure, index 0 is the NEWEST message.
-      // If we are playing a split story (e.g. Part 1, Part 2), they are usually generated in order
-      // but pushed to the top.
-      // E.g. [Part 2, Part 1, OldStuff].
-      // If I play Part 1 (index 1), next should be Part 2 (index 0).
-      // So we go "up" the list (lower index). 
-      // BUT, if user generated sequentially: [Newest, Older].
-      // Usually "Next" means "The one after this in the list UI".
-      // In the UI, they are rendered messages.map.
-      // If render order is top-to-bottom = messages array order (0 to N).
-      // Then "Next" visually is index + 1.
-      
       const nextIndex = currentIndex + 1;
       
       if (nextIndex < messages.length) {
