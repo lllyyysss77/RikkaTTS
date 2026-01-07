@@ -11,7 +11,6 @@ import { DebugConsole, LogEntry } from './components/DebugConsole';
 import { generateSpeech } from './services/geminiService';
 import { blobToBase64, calculateCost } from './utils/audioUtils';
 import { AudioMessage, TTS_MODELS, TTSModelId, Voice, SYSTEM_VOICES } from './types';
-import { SlidersHorizontal, Sparkles, Repeat } from 'lucide-react';
 
 const STORAGE_KEYS = {
   API_KEY: 'SILICONFLOW_API_KEY',
@@ -387,59 +386,18 @@ const App: React.FC = () => {
       <div className="fixed top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-100/50 to-transparent pointer-events-none z-0"></div>
       
       <div className="z-10 flex flex-col h-full">
-        <Header onMenuClick={() => {
-            setSettingsInitialView('main');
-            setIsSettingsOpen(true);
-        }} />
+        <Header 
+            onMenuClick={() => {
+                setSettingsInitialView('main');
+                setIsSettingsOpen(true);
+            }}
+            onOpenSelector={() => setIsSelectorOpen(true)}
+            onToggleAutoPlay={() => setIsAutoPlayEnabled(!isAutoPlayEnabled)}
+            isAutoPlayEnabled={isAutoPlayEnabled}
+            selectedModelName={selectedModelName}
+            selectedVoiceName={selectedVoice.name}
+        />
         
-        {/* Toolbar - Optimized for Mobile */}
-        <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 backdrop-blur-md bg-white/40 border-b border-white/50 sticky top-0 z-20 shrink-0 gap-2">
-          <div className="flex items-center gap-2 text-slate-700 min-w-0 flex-1">
-            <Sparkles className="w-5 h-5 text-purple-500 shrink-0" />
-            <h2 className="text-base md:text-lg font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
-              Rikka 语音终端
-            </h2>
-          </div>
-          
-          {/* Controls Group */}
-          <div className="flex items-center gap-2">
-            {/* Auto-Play Toggle */}
-            <button 
-                onClick={() => setIsAutoPlayEnabled(!isAutoPlayEnabled)}
-                className={`flex items-center justify-center p-2 rounded-full transition-all border ${
-                    isAutoPlayEnabled 
-                    ? 'bg-purple-100 text-purple-600 border-purple-200 shadow-inner' 
-                    : 'bg-white/70 text-gray-400 border-white/60 hover:text-purple-500'
-                }`}
-                title={isAutoPlayEnabled ? "咏唱连锁 (Auto-Play): ON" : "咏唱连锁 (Auto-Play): OFF"}
-            >
-                <Repeat className="w-4 h-4" />
-            </button>
-
-            {/* Model Config Button */}
-            <button 
-                onClick={() => setIsSelectorOpen(true)}
-                className="flex items-center gap-2 md:gap-3 bg-white/70 backdrop-blur-sm border border-white/60 rounded-full pl-3 pr-1.5 md:pl-5 md:pr-2 py-1 md:py-1.5 shadow-sm hover:shadow-md hover:border-purple-200 transition-all active:scale-95 group ml-2 max-w-[140px] md:max-w-none"
-            >
-                <div className="flex flex-col items-end leading-none mr-1 overflow-hidden">
-                    <span className="text-[9px] md:text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5 hidden sm:block">Configuration</span>
-                    <div className="flex items-center gap-1.5 w-full justify-end">
-                        <span className="text-xs md:text-sm font-bold text-slate-700 group-hover:text-purple-700 transition-colors truncate">
-                            {selectedModelName.split('/')[1] || selectedModelName}
-                        </span>
-                        <span className="text-slate-300 hidden sm:inline">/</span>
-                        <span className="text-[10px] md:text-xs font-medium text-slate-600 truncate max-w-[60px] md:max-w-[100px] hidden sm:inline">
-                            {selectedVoice.name}
-                        </span>
-                    </div>
-                </div>
-                <div className="bg-purple-50 p-1.5 md:p-2 rounded-full group-hover:bg-purple-100 text-purple-500 group-hover:text-purple-600 transition-colors shrink-0">
-                    <SlidersHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                </div>
-            </button>
-          </div>
-        </div>
-
         <SettingsMenu 
           isOpen={isSettingsOpen} 
           onClose={() => setIsSettingsOpen(false)}
@@ -467,17 +425,17 @@ const App: React.FC = () => {
           onOpenSettings={handleOpenSettings}
         />
 
-        <main className="flex-1 overflow-y-auto px-3 md:px-4 py-4 md:py-8 pb-48 scroll-smooth custom-scrollbar">
-          <div className="max-w-3xl mx-auto space-y-4 md:space-y-6">
+        <main className="flex-1 overflow-y-auto px-2 md:px-4 py-4 md:py-6 pb-48 scroll-smooth custom-scrollbar">
+          <div className="max-w-3xl mx-auto space-y-3 md:space-y-4">
             
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-10 md:py-20 text-center animate-in fade-in zoom-in duration-500 mt-10">
-                  <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner relative overflow-hidden">
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner relative overflow-hidden">
                     <div className="absolute inset-0 bg-white/30 backdrop-blur-sm"></div>
-                    <span className="text-4xl md:text-5xl relative z-10">🔮</span>
+                    <span className="text-3xl md:text-4xl relative z-10">🔮</span>
                   </div>
-                  <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">等待咏唱指令</h3>
-                  <p className="text-sm md:text-base text-gray-500 max-w-xs md:max-w-sm px-4">
+                  <h3 className="text-base md:text-lg font-bold text-gray-800 mb-2">等待咏唱指令</h3>
+                  <p className="text-xs md:text-sm text-gray-500 max-w-xs md:max-w-sm px-4 leading-relaxed">
                     {apiKey ? '请在下方输入文字，连接不可视境界线...' : '请先点击右上角菜单设置 API Key，开启魔力回路。'}
                   </p>
               </div>

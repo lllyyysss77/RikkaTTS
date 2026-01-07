@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Send, Zap, BookOpen, Square } from 'lucide-react';
 import { calculateCost, formatCost, getByteLength } from '../utils/audioUtils';
 
@@ -28,12 +28,22 @@ export const InputArea: React.FC<InputAreaProps> = ({ onGenerate, onStop, isLoad
   const [text, setText] = useState('');
   const [cost, setCost] = useState(0);
   const [bytes, setBytes] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const calculatedCost = calculateCost(text);
     const calculatedBytes = getByteLength(text);
     setCost(calculatedCost);
     setBytes(calculatedBytes);
+    
+    // Auto-resize textarea
+    if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'; // Reset height to recalculate shrinking
+        const scrollHeight = textareaRef.current.scrollHeight;
+        // Min height 50px, Max height 160px
+        const newHeight = Math.min(Math.max(scrollHeight, 50), 160); 
+        textareaRef.current.style.height = `${newHeight}px`;
+    }
   }, [text]);
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -41,6 +51,10 @@ export const InputArea: React.FC<InputAreaProps> = ({ onGenerate, onStop, isLoad
     if (text.trim()) {
       onGenerate(text);
       setText('');
+      // Reset height immediately after send
+      if (textareaRef.current) {
+          textareaRef.current.style.height = '50px';
+      }
     }
   };
 
@@ -58,11 +72,13 @@ export const InputArea: React.FC<InputAreaProps> = ({ onGenerate, onStop, isLoad
 
         <div className="relative bg-white/80 backdrop-blur-xl rounded-xl shadow-lg border border-purple-100 flex flex-col">
           <textarea
+            ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             // Removed onKeyDown listener to allow Enter for new lines
             placeholder="在此输入咏唱咒语 (文字)... (按回车换行)"
-            className="w-full h-24 pl-5 pr-14 py-4 bg-transparent border-none focus:ring-0 outline-none resize-none text-gray-700 placeholder-gray-400/70 text-base font-medium disabled:opacity-50"
+            rows={1}
+            className="w-full min-h-[50px] pl-5 pr-14 py-3 bg-transparent border-none focus:ring-0 outline-none resize-none text-gray-700 placeholder-gray-400/70 text-base font-medium disabled:opacity-50 overflow-y-auto"
           />
           
           <div className="flex items-center justify-between px-4 pb-3 pt-1 border-t border-purple-50/50">

@@ -251,15 +251,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   // Pending State
   if (status === 'pending') {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-white/40 backdrop-blur-md border border-purple-100 shadow-sm p-5 animate-pulse">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
-             <Loader2 className="w-5 h-5 text-purple-500 animate-spin" />
+      <div className="relative overflow-hidden rounded-xl bg-white/40 backdrop-blur-md border border-purple-100 shadow-sm p-3 animate-pulse">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+             <Loader2 className="w-4 h-4 text-purple-500 animate-spin" />
           </div>
-          <div className="flex-1 space-y-2">
-            <div className="h-4 bg-purple-100/50 rounded w-3/4"></div>
-            <div className="h-3 bg-purple-100/50 rounded w-1/2"></div>
-            <p className="text-xs text-purple-500 font-medium mt-2">正在咏唱中 (Generating)...</p>
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 bg-purple-100/50 rounded w-3/4"></div>
+            <div className="h-2.5 bg-purple-100/50 rounded w-1/2"></div>
           </div>
         </div>
       </div>
@@ -269,18 +268,18 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   // Error State
   if (status === 'error') {
     return (
-      <div className="relative overflow-hidden rounded-2xl bg-red-50/50 backdrop-blur-md border border-red-100 shadow-sm p-5">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-             <AlertCircle className="w-5 h-5 text-red-500" />
+      <div className="relative overflow-hidden rounded-xl bg-red-50/50 backdrop-blur-md border border-red-100 shadow-sm p-3">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+             <AlertCircle className="w-4 h-4 text-red-500" />
           </div>
-          <div className="flex-1">
-             <p className="text-gray-800 text-sm font-medium mb-1">{text}</p>
-             <p className="text-xs text-red-500 mt-1">{errorMessage || "Generation failed"}</p>
+          <div className="flex-1 min-w-0">
+             <p className="text-gray-800 text-xs font-medium mb-0.5 truncate">{text}</p>
+             <p className="text-[10px] text-red-500">{errorMessage || "Generation failed"}</p>
           </div>
           <button 
             onClick={() => onDelete(id)}
-            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-100 rounded-lg transition-colors"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -291,21 +290,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   // Success State
   return (
-    <div className={`relative group overflow-hidden rounded-2xl backdrop-blur-xl border transition-all duration-300 ${
+    <div className={`relative group overflow-hidden rounded-xl backdrop-blur-xl border transition-all duration-300 ${
         isActive || isPlaying
         ? 'bg-purple-50/90 border-purple-300 shadow-md shadow-purple-200/50 scale-[1.01] z-10' 
         : 'bg-white/70 border-white/60 shadow-lg hover:shadow-purple-100 hover:border-purple-100'
     }`}>
       
-      {/* Visualizer Canvas (Mana Resonance) */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none opacity-80 z-0">
-         <canvas ref={canvasRef} className="w-full h-full" width={400} height={100} />
+      {/* Visualizer Canvas (Compact) */}
+      <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none opacity-80 z-0">
+         <canvas ref={canvasRef} className="w-full h-full" width={400} height={50} />
       </div>
 
-      <div className="p-5 relative z-10">
+      <div className="p-3 relative z-10">
         {/* Text Content */}
-        <div className="mb-5 pr-8 relative">
-           <p className={`text-sm font-medium leading-relaxed font-sans break-words transition-colors ${
+        <div className="mb-2 pr-6 relative">
+           <p className={`text-sm font-medium leading-relaxed font-sans break-words transition-colors line-clamp-3 ${
                isActive || isPlaying ? 'text-purple-900' : 'text-gray-700 opacity-90'
            }`}>
              {text}
@@ -313,30 +312,30 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
            
            <button 
              onClick={() => onDelete(id)}
-             className="absolute -top-2 -right-2 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+             className="absolute -top-1 -right-1 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
              title="删除 (Delete)"
            >
-             <Trash2 className="w-4 h-4" />
+             <Trash2 className="w-3.5 h-3.5" />
            </button>
 
-           <div className="flex flex-wrap items-center gap-2 mt-3">
+           <div className="flex flex-wrap items-center gap-1.5 mt-2">
              {cost !== undefined && (
-               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-50/80 border border-purple-100/50 text-xs font-semibold text-purple-700 shadow-sm backdrop-blur-sm">
-                 <Coins className="w-3 h-3" />
+               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50/80 border border-purple-100/50 text-[10px] font-semibold text-purple-700 shadow-sm backdrop-blur-sm">
+                 <Coins className="w-2.5 h-2.5" />
                  {formatCost(cost)}
                </div>
              )}
              
              {generationTime !== undefined && (
-               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50/80 border border-blue-100/50 text-xs font-semibold text-blue-700 shadow-sm backdrop-blur-sm" title="Generation Time">
-                 <Timer className="w-3 h-3" />
+               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50/80 border border-blue-100/50 text-[10px] font-semibold text-blue-700 shadow-sm backdrop-blur-sm" title="Generation Time">
+                 <Timer className="w-2.5 h-2.5" />
                  {(generationTime / 1000).toFixed(2)}s
                </div>
              )}
 
              {isActive && (
                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold border border-green-200 animate-pulse backdrop-blur-sm shadow-sm">
-                     <Activity className="w-3 h-3" /> 
+                     <Activity className="w-2.5 h-2.5" /> 
                      {isPlaying ? '播放中' : '准备就绪'}
                  </div>
              )}
@@ -344,21 +343,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
 
         {/* Player Controls */}
-        <div className="flex items-center gap-4 select-none pt-1">
+        <div className="flex items-center gap-3 select-none pt-1">
           <button 
             onClick={togglePlay}
-            className={`w-11 h-11 flex shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-all focus:outline-none ${
+            className={`w-9 h-9 flex shrink-0 items-center justify-center rounded-full text-white shadow-md transition-all focus:outline-none ${
                 isActive || isPlaying 
                 ? 'bg-purple-600 shadow-purple-300 scale-105 ring-2 ring-purple-200' 
                 : 'bg-gradient-to-br from-purple-500 to-indigo-500 shadow-purple-200 hover:scale-105 active:scale-95'
             }`}
           >
-            {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+            {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
           </button>
 
           {/* Progress Bar Area */}
-          <div className="flex-1 flex flex-col gap-1.5">
-            <div className="relative h-2.5 flex items-center w-full group/slider cursor-pointer">
+          <div className="flex-1 flex flex-col gap-1">
+            <div className="relative h-2 flex items-center w-full group/slider cursor-pointer">
               <input
                   type="range"
                   min="0"
@@ -369,7 +368,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
                   className="absolute w-full h-full opacity-0 z-20 cursor-pointer"
               />
               
-              <div className="absolute w-full h-1.5 bg-gray-200/70 rounded-full overflow-hidden z-10">
+              <div className="absolute w-full h-1 bg-gray-200/70 rounded-full overflow-hidden z-10">
                   <div 
                       className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-100 ease-out"
                       style={{ width: `${progressPercent}%` }}
@@ -377,25 +376,23 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               </div>
               
               <div 
-                  className="absolute h-3 w-3 bg-white border-2 border-purple-500 rounded-full z-10 shadow-sm transform -translate-x-1.5 opacity-0 group-hover/slider:opacity-100 transition-opacity pointer-events-none"
+                  className="absolute h-2.5 w-2.5 bg-white border-2 border-purple-500 rounded-full z-10 shadow-sm transform -translate-x-1 opacity-0 group-hover/slider:opacity-100 transition-opacity pointer-events-none"
                   style={{ left: `${progressPercent}%` }}
               ></div>
             </div>
             
-            <div className="flex justify-between text-[10px] font-mono text-gray-400 px-0.5">
+            <div className="flex justify-between text-[10px] font-mono text-gray-400 px-0.5 leading-none">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
           </div>
 
-          <div className="w-px h-6 bg-gray-200/60 mx-1"></div>
-
           <button 
             onClick={handleDownload}
-            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
             title="Download Audio"
           >
-            <Download className="w-5 h-5" />
+            <Download className="w-4 h-4" />
           </button>
         </div>
       </div>
