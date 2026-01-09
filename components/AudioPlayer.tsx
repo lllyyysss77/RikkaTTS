@@ -238,9 +238,15 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   const handleDownload = () => {
     if (status !== 'success') return;
+    
+    // Use first 10 characters of the text as filename
+    // Replace special characters that might be invalid in filenames
+    let filenameStr = text.substring(0, 10).replace(/[\\/:*?"<>|]/g, '').trim();
+    if (!filenameStr) filenameStr = `rikka-tts-${Date.now()}`;
+
     const a = document.createElement('a');
     a.href = audioUrl;
-    a.download = `rikka-tts-${Date.now()}.mp3`;
+    a.download = `${filenameStr}.mp3`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
