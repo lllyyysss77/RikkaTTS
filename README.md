@@ -1,77 +1,81 @@
-# 👁️ Rikka-TTS (邪王真眼·语音共鸣装置) v2.0
+# 🔮 Rikka-TTS | 邪王真眼共鸣装置
 
-> “爆裂吧，现实！粉碎吧，精神！放逐这个世界！—— 此乃连接不可视境界线之终端。”
+Rikka-TTS 是一款基于 [SiliconFlow (硅基流动)](https://siliconflow.cn/) API 构建的现代化、跨平台文本转语音 (TTS) 客户端。它拥有极具中二病风格的魔法 UI 设计，专为移动端与桌面端提供丝滑的沉浸式体验。
 
-![Status](https://img.shields.io/badge/Status-Fully%20Operational-purple.svg) ![Mana](https://img.shields.io/badge/Mana-SiliconFlow-blue.svg) ![Deploy](https://img.shields.io/badge/Deploy-Zeabur-000000.svg)
+![Project Logo/Preview Placeholder](#) *(如果有截图可以放在这里)*
 
-## 🔮 契约书 (简介)
+## ✨ 核心特性
 
-凡人啊，欢迎来到 **Rikka-TTS 2.0**。这不仅仅是一个基于 React 和 SiliconFlow API 构建的语音合成客户端，它是**邪王真眼 (Wicked Eye)** 用来将精神能量转化为声波的魔导具。
+- **🚀 零延迟连发系统 (Chain Casting)**
+  - 支持真正的多线程并发生成。不受前一条语音生成加载的限制，疯狂连发、后台并行提速。
+  - 内置自动追播（Auto-Play）队列，无缝念出长段分段文本。
+  
+- **🔊 智能音色管理**
+  - 无缝接入 SiliconFlow 的多种 TTS 大模型 (如 `IndexTTS-2`, `CosyVoice2-0.5B`, `MOSS-TTSD` 等)。
+  - 支持 **自定义音色克隆与上传**，一次上传即可在云端漫步。
+  - 提供本地持久化的“自命名”系统，将晦涩的官方 ID 改成你最喜欢的专属昵称。
 
-通过此装置，你可以跨越维度的限制，将枯燥的文字转化为拥有灵魂的 **“声音 (Voice)”**，并观测声音的形态。
+- **📱 极致的移动端适配 (Mobile-First)**
+  - 采用流体卡片布局、亚克力（毛玻璃）模糊背景效果。
+  - 精心调整的防误触大按钮 (44px 黄金触控区) 和适配手机屏幕的弹窗。
+  - 滚动时自动吸顶吸底，在移动端浏览器（包括内置浏览器）中也能拥有接近原生 App 的手感。
 
-## 📜 魔导书功能 (Features)
+- **🔗 原生社交分享**
+  - 利用 Web Share API，在支持的设备上一键拉起系统原生分享面板，直接发送语音 mp3 文件至微信、Telegram 等社交软件。
+  - 针对不支持原生分享的场景（如 HTTP 局域网）提供智能降级或 HTTPS 本地测试方案。
 
-### 核心机能
-*   **咏唱具现化 (High-Quality TTS)**: 支持 `IndexTTS` (推荐), `CosyVoice`, `Moss` 等多种顶级术式。
-*   **灵魂复刻 & 萃取 (Voice Cloning & Extraction)**: 
-    *   支持上传音频文件复刻音色。
-    *   **New!** 支持直接上传视频文件 (.mp4, .mov)，系统会自动提取音轨作为参考音频。
-*   **咏唱连锁 (Chain Casting)**: 开启自动连播模式，像听有声书一样连续播放生成的片段。
-*   **视界共鸣 (Visualizer)**: 播放音频时，界面会随声波频率产生紫色的魔力共鸣（动态频谱）。
+- **💰 精准的算力消耗监控**
+  - 内置字符/字节计费预估系统。
+  - 发送按钮下方常驻显示当前任务的预估 ¥ 消耗，每按一次都心中有数。
 
-### 辅助系统
-*   **等价交换 (Cost Calc)**: 实时计算魔力消耗（¥50/1M bytes），精确掌控因果律代价。
-*   **时空回溯 (History)**: 所有的生成记录都会被铭刻在本地 LocalStorage，防爆仓机制自动管理存储空间。
-*   **真理之书 (Grimoire)**: 随机生成中二病台词，用于快速测试音色效果。
-*   **自动分段 (Auto Split)**: 支持将长文本按换行符自动切分为多个任务并行或串行生成。
+## 🛠️ 技术栈
 
-## 🕹️ 操作指南 (How to Use)
+此应用是一个纯前端 (Client-Side) SPA，完全由本地浏览器驱动。
 
-### 1. 建立契约 (Setup API)
-点击右上角的 **汉堡菜单** -> **设置 & 管理**，输入你的 SiliconFlow API Key。密钥仅保存在你的浏览器本地，不会上传至任何第三方服务器。
+- **框架**: [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **构建工具**: [Vite](https://vitejs.dev/)
+- **样式**: [Tailwind CSS](https://tailwindcss.com/)
+- **图标**: [Lucide React](https://lucide.dev/)
+- **音频引擎**: HTML5 `<audio>` + Web Audio API (实时波形可视化)
+- **存储方案**: 浏览器 `localStorage` 持久化保存密钥、音色设置和历史记录
 
-### 2. 灵魂复刻 (Create Voice)
-如果你想使用特定的声音：
-1. 打开 **设置** -> **上传素材 / 创建音色**。
-2. 上传一段 5-10 秒的音频，**或者直接上传一个视频文件**（系统会自动提取音频）。
-3. 点击“自动识别文本”获取参考文本。
-4. 命名并上传。
+## 📦 本地开发与运行
 
-### 3. 开始咏唱 (Generate)
-1. 在主界面底部输入框输入文字（或点击“书本”图标随机生成）。
-2. 点击中间的胶囊按钮选择 **模型** 和 **音色**。
-3. 点击 **生成**。
+### 1. 克隆项目 & 安装依赖
 
-### 4. 观测与连锁 (Play & Chain)
-*   点击播放按钮收听，观察底部的紫色能量波动。
-*   点击顶部工具栏的 **循环图标** 开启“咏唱连锁”，当前片段播放完毕后将自动播放下一条。
+```bash
+git clone <你的仓库地址>
+cd RikkaTTS
+npm install
+```
 
-## 🌌 开启世界之门 (Deploy to Zeabur)
+### 2. 启动开发服务器
 
-本装置已针对 **Zeabur** 进行了深度适配，无需任何复杂的 Docker 配置或构建命令，**直接拉取仓库即可部署**。
+```bash
+npm run dev
+```
 
-### 部署步骤：
+> **局域网真机调试提示**: 
+> 默认情况下，我们在 `vite.config.ts` 中启用了 `@vitejs/plugin-basic-ssl` 插件。这意味着当您使用 `npm run dev -- --host` 在局域网中测试时，它会自动提供 HTTPS 服务（以突破手机浏览器对原生分享功能的 HTTP 限制）。
 
-1. **Fork 本仓库** 到你的 GitHub 账号。
-2. 登录 [Zeabur Dashboard](https://zeabur.com).
-3. 点击 **Create Project** (创建项目)。
-4. 点击 **Deploy New Service** (部署新服务) -> 选择 **Git**。
-5. 在列表中选中你刚刚 Fork 的 `rikka-tts-client` 仓库。
-6. 点击部署。
-   * Zeabur 会自动识别这是一个 Vite/React 项目并开始构建。
-7. 等待构建完成后，在 **Networking** (网络) 选项卡中点击 **Generate Domain** (生成域名) 或绑定你自己的域名。
-8. 访问域名，开始咏唱！
+### 3. 构建生产版本
 
-## 💰 计费说明 (Billing)
+```bash
+npm run build
+```
+输出的文件将在 `dist` 文件夹中，可以直接部署到 Zeabur, Vercel, Netlify 或任何静态页面托管服务。
 
-*   **费率**: ¥50.00 CNY / 1,000,000 Bytes (UTF-8)
-*   *注：本客户端仅作为连接器，实际费用产生于你的 SiliconFlow 账户。*
+## ⚙️ 快速上手
 
-## 🛡️ 许可证 (License)
+1. 启动项目并打开网页。
+2. 点击右上角 **菜单 (Menu)**。
+3. 在设置面板中填入你在 **SiliconFlow** 申请的 API 密钥。
+4. 返回主页，点击顶部 **配置选择** 按钮挑选模型和音色（或上传自己的音频进行音色克隆）。
+5. 在下方魔法书输入框中输入咒语，即可召唤语音！
 
-MIT
+## 🤝 贡献与反馈
+
+欢迎提交 Issue 和 Pull Request，或者分享你发现的有趣音色组合！
 
 ---
-
-> “The Dark Flame Master 已确认为此仓库的协力者。”
+*"被漆黑烈焰吞噬殆尽吧！(Dark Flame Master!)"*

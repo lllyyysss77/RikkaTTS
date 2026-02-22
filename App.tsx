@@ -25,21 +25,44 @@ const STORAGE_KEYS = {
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<AudioMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [activeRequestsCount, setActiveRequestsCount] = useState(0);
+  const isLoading = activeRequestsCount > 0;
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  
+
   // State for Model and Voice
-  const [selectedModel, setSelectedModel] = useState<TTSModelId>(TTS_MODELS[0].id);
-  const [selectedVoice, setSelectedVoice] = useState<Voice>(SYSTEM_VOICES[0]);
-  
+  const [selectedModel, setSelectedModel] = useState<TTSModelId>(() => {
+    const savedModel = localStorage.getItem(STORAGE_KEYS.SETTINGS_MODEL);
+    if (savedModel && TTS_MODELS.some(m => m.id === savedModel)) {
+      return savedModel as TTSModelId;
+    }
+    return TTS_MODELS[0].id;
+  });
+
+  const [selectedVoice, setSelectedVoice] = useState<Voice>(() => {
+    const savedVoiceJson = localStorage.getItem(STORAGE_KEYS.SETTINGS_VOICE);
+    if (savedVoiceJson) {
+      try {
+        const parsedVoice = JSON.parse(savedVoiceJson) as Voice;
+        if (parsedVoice.type === 'system') {
+          const latestSystemVoice = SYSTEM_VOICES.find(v => v.id === parsedVoice.id);
+          if (latestSystemVoice) return latestSystemVoice;
+        }
+        return parsedVoice;
+      } catch (e) {
+        console.error("Failed to parse saved voice", e);
+      }
+    }
+    return SYSTEM_VOICES[0];
+  });
+
   // Settings
   const [enableSplit, setEnableSplit] = useState(() => {
-     return localStorage.getItem(STORAGE_KEYS.ENABLE_SPLIT) === 'true';
+    return localStorage.getItem(STORAGE_KEYS.ENABLE_SPLIT) === 'true';
   });
   const [enableConcurrent, setEnableConcurrent] = useState(() => {
-     return localStorage.getItem(STORAGE_KEYS.ENABLE_CONCURRENT) === 'true';
+    return localStorage.getItem(STORAGE_KEYS.ENABLE_CONCURRENT) === 'true';
   });
-  
+
   // Auto-Play (Chain Casting) State
   const [isAutoPlayEnabled, setIsAutoPlayEnabled] = useState(() => {
     return localStorage.getItem(STORAGE_KEYS.AUTO_PLAY) === 'true';
@@ -77,27 +100,12 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const savedModel = localStorage.getItem(STORAGE_KEYS.SETTINGS_MODEL);
-    if (savedModel && TTS_MODELS.some(m => m.id === savedModel)) {
-      setSelectedModel(savedModel as TTSModelId);
-    }
-
-    const savedVoiceJson = localStorage.getItem(STORAGE_KEYS.SETTINGS_VOICE);
-    if (savedVoiceJson) {
-      try {
-        const parsedVoice = JSON.parse(savedVoiceJson);
-        setSelectedVoice(parsedVoice);
-      } catch (e) {
-        console.error("Failed to parse saved voice", e);
-      }
-    }
-
     const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     if (savedMessages) {
       try {
         const parsedMessages = JSON.parse(savedMessages);
         if (Array.isArray(parsedMessages)) {
-           setMessages(parsedMessages);
+          setMessages(parsedMessages);
         }
       } catch (e) {
         console.error("Failed to parse saved messages", e);
@@ -128,34 +136,34 @@ const App: React.FC = () => {
   // Handle message storage with circular buffer logic
   useEffect(() => {
     const saveMessagesToStorage = () => {
-        try {
-            // Only save success messages to storage to avoid saving pending states
-            const messagesToSave = messages.filter(m => m.status !== 'pending' && m.status !== 'error');
-            localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messagesToSave));
-        } catch (e) {
-            if (e instanceof DOMException && 
-                (e.code === 22 || e.code === 1014 || e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-                
-                if (messages.length > 0) {
-                    setMessages(prev => {
-                        // Find oldest successful message
-                        const index = prev.slice().reverse().findIndex(m => m.status === 'success');
-                        if (index !== -1) {
-                           const actualIndex = prev.length - 1 - index;
-                           const newArr = [...prev];
-                           newArr.splice(actualIndex, 1);
-                           return newArr;
-                        }
-                        return prev.slice(0, -1);
-                    }); 
-                    addLog("Local storage limit reached. Oldest history item removed.", 'warning');
-                }
-            } else {
-                console.error("Failed to save messages to localStorage", e);
-            }
+      try {
+        // Only save success messages to storage to avoid saving pending states
+        const messagesToSave = messages.filter(m => m.status !== 'pending' && m.status !== 'error');
+        localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messagesToSave));
+      } catch (e) {
+        if (e instanceof DOMException &&
+          (e.code === 22 || e.code === 1014 || e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+
+          if (messages.length > 0) {
+            setMessages(prev => {
+              // Find oldest successful message
+              const index = prev.slice().reverse().findIndex(m => m.status === 'success');
+              if (index !== -1) {
+                const actualIndex = prev.length - 1 - index;
+                const newArr = [...prev];
+                newArr.splice(actualIndex, 1);
+                return newArr;
+              }
+              return prev.slice(0, -1);
+            });
+            addLog("Local storage limit reached. Oldest history item removed.", 'warning');
+          }
+        } else {
+          console.error("Failed to save messages to localStorage", e);
         }
+      }
     };
-    
+
     const timer = setTimeout(saveMessagesToStorage, 500);
     return () => clearTimeout(timer);
   }, [messages]);
@@ -173,111 +181,111 @@ const App: React.FC = () => {
 
   const handleStop = () => {
     if (isLoading) {
-        stopGenerationRef.current = true;
-        addLog("Stopping generation request...", 'info');
+      stopGenerationRef.current = true;
+      addLog("Stopping generation request...", 'info');
     }
   };
 
   const handleDeleteMessage = (id: string) => {
-      setMessages(prev => prev.filter(msg => msg.id !== id));
-      if (activePlayingId === id) setActivePlayingId(null);
+    setMessages(prev => prev.filter(msg => msg.id !== id));
+    if (activePlayingId === id) setActivePlayingId(null);
   };
 
   const handleClearCache = () => {
-      setMessages([]);
-      localStorage.removeItem(STORAGE_KEYS.MESSAGES);
-      setActivePlayingId(null);
-      addLog("All history cleared.", 'success');
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+    setActivePlayingId(null);
+    addLog("All history cleared.", 'success');
   };
 
   const handleOpenSettings = (view: 'upload') => {
-      setIsSelectorOpen(false);
-      setSettingsInitialView(view);
-      setIsSettingsOpen(true);
+    setIsSelectorOpen(false);
+    setSettingsInitialView(view);
+    setIsSettingsOpen(true);
   };
 
   // Logic for Auto-Play / Chain Casting
   const handleAudioPlay = (id: string) => {
-      setActivePlayingId(id);
+    setActivePlayingId(id);
   };
 
   const handleAudioEnded = (endedId: string) => {
-      if (!isAutoPlayEnabled) {
-          setActivePlayingId(null);
-          return;
-      }
+    if (!isAutoPlayEnabled) {
+      setActivePlayingId(null);
+      return;
+    }
 
-      // Find current index
-      const currentIndex = messages.findIndex(m => m.id === endedId);
-      if (currentIndex === -1) return;
+    // Find current index
+    const currentIndex = messages.findIndex(m => m.id === endedId);
+    if (currentIndex === -1) return;
 
-      // In the current list structure, index 0 is the NEWEST message.
-      const nextIndex = currentIndex + 1;
-      
-      if (nextIndex < messages.length) {
-          const nextMessage = messages[nextIndex];
-          if (nextMessage.status === 'success') {
-              addLog(`Auto-playing next: ${nextMessage.text.substring(0, 10)}...`, 'info');
-              setActivePlayingId(nextMessage.id);
-          } else {
-              setActivePlayingId(null);
-          }
+    // In the current list structure, index 0 is the NEWEST message.
+    const nextIndex = currentIndex + 1;
+
+    if (nextIndex < messages.length) {
+      const nextMessage = messages[nextIndex];
+      if (nextMessage.status === 'success') {
+        addLog(`Auto-playing next: ${nextMessage.text.substring(0, 10)}...`, 'info');
+        setActivePlayingId(nextMessage.id);
       } else {
-          setActivePlayingId(null);
-          addLog("End of playlist reached.", 'info');
+        setActivePlayingId(null);
       }
+    } else {
+      setActivePlayingId(null);
+      addLog("End of playlist reached.", 'info');
+    }
   };
 
-  const processSingleTask = async (task: {id: string, text: string}) => {
-     const startTime = Date.now();
-     const cost = calculateCost(task.text);
-     let blobUrl: string | null = null;
+  const processSingleTask = async (task: { id: string, text: string }) => {
+    const startTime = Date.now();
+    const cost = calculateCost(task.text);
+    let blobUrl: string | null = null;
 
-     // Special Retry Logic for IndexTTS
-     if (selectedModel.includes('IndexTTS')) {
-          let attempt = 1;
-          while (!stopGenerationRef.current) {
-              try {
-                  blobUrl = await generateSpeech(task.text, selectedModel, selectedVoice, apiKey);
-                  break; 
-              } catch (error) {
-                  if (stopGenerationRef.current) throw new Error("User manually stopped generation.");
-                  
-                  const errMsg = error instanceof Error ? error.message : String(error);
-                  
-                  // If we are retrying, we might want to update status but 'pending' is fine.
-                  addLog(`IndexTTS Attempt ${attempt} failed: ${errMsg}`, 'warning');
-                  
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  
-                  if (stopGenerationRef.current) throw new Error("User manually stopped generation.");
-                  attempt++;
-              }
-          }
-      } else {
+    // Special Retry Logic for IndexTTS
+    if (selectedModel.includes('IndexTTS')) {
+      let attempt = 1;
+      while (!stopGenerationRef.current) {
+        try {
           blobUrl = await generateSpeech(task.text, selectedModel, selectedVoice, apiKey);
+          break;
+        } catch (error) {
+          if (stopGenerationRef.current) throw new Error("User manually stopped generation.");
+
+          const errMsg = error instanceof Error ? error.message : String(error);
+
+          // If we are retrying, we might want to update status but 'pending' is fine.
+          addLog(`IndexTTS Attempt ${attempt} failed: ${errMsg}`, 'warning');
+
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          if (stopGenerationRef.current) throw new Error("User manually stopped generation.");
+          attempt++;
+        }
       }
-      
-      if (stopGenerationRef.current) throw new Error("Stopped");
-      if (!blobUrl) throw new Error("Failed to generate audio url.");
+    } else {
+      blobUrl = await generateSpeech(task.text, selectedModel, selectedVoice, apiKey);
+    }
 
-      const response = await fetch(blobUrl);
-      const blob = await response.blob();
-      const base64Audio = await blobToBase64(blob);
-      const endTime = Date.now();
+    if (stopGenerationRef.current) throw new Error("Stopped");
+    if (!blobUrl) throw new Error("Failed to generate audio url.");
 
-      // Update message with success
-      setMessages(prev => prev.map(msg => 
-          msg.id === task.id ? {
-            ...msg,
-            audioUrl: base64Audio,
-            cost: cost,
-            generationTime: endTime - startTime,
-            status: 'success'
-          } : msg
-      ));
-      
-      addLog(`Generated "${task.text.substring(0, 15)}..." (Time: ${((endTime - startTime)/1000).toFixed(2)}s)`, 'success');
+    const response = await fetch(blobUrl);
+    const blob = await response.blob();
+    const base64Audio = await blobToBase64(blob);
+    const endTime = Date.now();
+
+    // Update message with success
+    setMessages(prev => prev.map(msg =>
+      msg.id === task.id ? {
+        ...msg,
+        audioUrl: base64Audio,
+        cost: cost,
+        generationTime: endTime - startTime,
+        status: 'success'
+      } : msg
+    ));
+
+    addLog(`Generated "${task.text.substring(0, 15)}..." (Time: ${((endTime - startTime) / 1000).toFixed(2)}s)`, 'success');
   };
 
   const handleGenerate = async (text: string) => {
@@ -289,118 +297,126 @@ const App: React.FC = () => {
     }
 
     stopGenerationRef.current = false;
-    setIsLoading(true);
+    setActiveRequestsCount(prev => prev + 1);
 
     try {
-        let textsToGenerate: string[] = [];
+      let textsToGenerate: string[] = [];
 
-        if (enableSplit) {
-            textsToGenerate = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            if (textsToGenerate.length === 0) {
-                 addLog("No valid text found after splitting lines.", 'warning');
-                 setIsLoading(false);
-                 return;
+      if (enableSplit) {
+        textsToGenerate = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        if (textsToGenerate.length === 0) {
+          addLog("No valid text found after splitting lines.", 'warning');
+          setActiveRequestsCount(prev => Math.max(0, prev - 1));
+          return;
+        }
+        addLog(`Splitting enabled. Processing ${textsToGenerate.length} segments.`, 'info');
+      } else {
+        textsToGenerate = [text];
+        addLog(`Generating speech...`, 'info');
+      }
+
+      // 1. Create Placeholder Cards Immediately
+      const tasks = textsToGenerate.map(t => ({
+        id: Date.now().toString() + Math.random().toString().slice(2, 6),
+        text: t
+      }));
+
+      const newPlaceholders: AudioMessage[] = tasks.map(t => ({
+        id: t.id,
+        text: t.text,
+        audioUrl: '',
+        createdAt: Date.now(),
+        status: 'pending',
+        voiceName: selectedVoice.name
+      }));
+
+      setMessages(prev => [...newPlaceholders, ...prev]);
+
+      // 迫使页面在生成新消息时滚动到顶部，防止移动端的滚动锚点 (Scroll Anchoring) 将新消息推到视口上方
+      setTimeout(() => {
+        const mainEl = document.querySelector('main');
+        if (mainEl) {
+          mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 50);
+
+      // 2. Execute Tasks (Concurrent or Sequential)
+      if (enableConcurrent) {
+        const promises = tasks.map(async (task) => {
+          if (stopGenerationRef.current) return;
+          try {
+            await processSingleTask(task);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'Unknown error';
+            if (msg === "Stopped") return;
+
+            setMessages(prev => prev.map(m => m.id === task.id ? {
+              ...m, status: 'error', errorMessage: msg
+            } : m));
+
+            addLog(`Failed to generate: ${msg}`, 'error');
+          }
+        });
+
+        await Promise.all(promises);
+
+      } else {
+        for (const task of tasks) {
+          if (stopGenerationRef.current) break;
+          try {
+            await processSingleTask(task);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'Unknown error';
+            if (msg === "Stopped" || msg.includes("stopped")) {
+              addLog("Generation stopped by user.", 'info');
+              break;
             }
-            addLog(`Splitting enabled. Processing ${textsToGenerate.length} segments.`, 'info');
-        } else {
-            textsToGenerate = [text];
-            addLog(`Generating speech...`, 'info');
+
+            setMessages(prev => prev.map(m => m.id === task.id ? {
+              ...m, status: 'error', errorMessage: msg
+            } : m));
+
+            addLog(`Failed to generate: ${msg}`, 'error');
+          }
         }
+      }
 
-        // 1. Create Placeholder Cards Immediately
-        const tasks = textsToGenerate.map(t => ({
-            id: Date.now().toString() + Math.random().toString().slice(2, 6),
-            text: t
-        }));
-
-        const newPlaceholders: AudioMessage[] = tasks.map(t => ({
-            id: t.id,
-            text: t.text,
-            audioUrl: '',
-            createdAt: Date.now(),
-            status: 'pending'
-        }));
-
-        setMessages(prev => [...newPlaceholders, ...prev]);
-
-        // 2. Execute Tasks (Concurrent or Sequential)
-        if (enableConcurrent) {
-             const promises = tasks.map(async (task) => {
-                if (stopGenerationRef.current) return;
-                try {
-                    await processSingleTask(task);
-                } catch (e) {
-                    const msg = e instanceof Error ? e.message : 'Unknown error';
-                    if (msg === "Stopped") return;
-                    
-                    setMessages(prev => prev.map(m => m.id === task.id ? {
-                        ...m, status: 'error', errorMessage: msg
-                    } : m));
-                    
-                    addLog(`Failed to generate: ${msg}`, 'error');
-                }
-             });
-             
-             await Promise.all(promises);
-
-        } else {
-             for (const task of tasks) {
-                 if (stopGenerationRef.current) break;
-                 try {
-                     await processSingleTask(task);
-                 } catch (e) {
-                     const msg = e instanceof Error ? e.message : 'Unknown error';
-                     if (msg === "Stopped" || msg.includes("stopped")) {
-                         addLog("Generation stopped by user.", 'info');
-                         break;
-                     }
-                     
-                     setMessages(prev => prev.map(m => m.id === task.id ? {
-                        ...m, status: 'error', errorMessage: msg
-                     } : m));
-
-                     addLog(`Failed to generate: ${msg}`, 'error');
-                 }
-             }
-        }
-        
-        // Cleanup stopped items if necessary (optional)
-        if (stopGenerationRef.current) {
-            setMessages(prev => prev.filter(m => m.status !== 'pending'));
-        }
+      // Cleanup stopped items if necessary (optional)
+      if (stopGenerationRef.current) {
+        setMessages(prev => prev.filter(m => m.status !== 'pending'));
+      }
 
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoading(false);
-      stopGenerationRef.current = false;
+      setActiveRequestsCount(prev => {
+        const nextCount = Math.max(0, prev - 1);
+        if (nextCount === 0) {
+          stopGenerationRef.current = false;
+        }
+        return nextCount;
+      });
     }
   };
 
-  const selectedModelName = TTS_MODELS.find(m => m.id === selectedModel)?.name || selectedModel;
-
   return (
-    // Changed h-full to h-[100dvh] to better handle mobile browsers
-    <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-[#F5F7FA] via-[#F3F0FF] to-[#E6E6FA] font-sans relative overflow-hidden">
-      
-      {/* Background Ambience */}
-      <div className="fixed top-0 left-0 w-full h-96 bg-gradient-to-b from-purple-100/50 to-transparent pointer-events-none z-0"></div>
-      
+    // iOS/macOS System Gray Background
+    <div className="fixed inset-0 flex flex-col bg-[#F2F2F7] font-sans overflow-hidden selection:bg-[#007AFF]/20 selection:text-[#007AFF]">
       <div className="z-10 flex flex-col h-full">
-        <Header 
-            onMenuClick={() => {
-                setSettingsInitialView('main');
-                setIsSettingsOpen(true);
-            }}
-            onOpenSelector={() => setIsSelectorOpen(true)}
-            onToggleAutoPlay={() => setIsAutoPlayEnabled(!isAutoPlayEnabled)}
-            isAutoPlayEnabled={isAutoPlayEnabled}
-            selectedModelName={selectedModelName}
-            selectedVoiceName={selectedVoice.name}
+        <Header
+          onMenuClick={() => {
+            setSettingsInitialView('main');
+            setIsSettingsOpen(true);
+          }}
+          onOpenSelector={() => setIsSelectorOpen(true)}
+          onToggleAutoPlay={() => setIsAutoPlayEnabled(!isAutoPlayEnabled)}
+          isAutoPlayEnabled={isAutoPlayEnabled}
+          selectedModelName={TTS_MODELS.find(m => m.id === selectedModel)?.name || selectedModel}
+          selectedVoiceName={selectedVoice.name}
         />
-        
-        <SettingsMenu 
-          isOpen={isSettingsOpen} 
+
+        <SettingsMenu
+          isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           apiKey={apiKey}
           setApiKey={handleSetApiKey}
@@ -415,8 +431,8 @@ const App: React.FC = () => {
           onClearCache={handleClearCache}
         />
 
-        <ModelVoiceSelector 
-          isOpen={isSelectorOpen} 
+        <ModelVoiceSelector
+          isOpen={isSelectorOpen}
           onClose={() => setIsSelectorOpen(false)}
           currentModel={selectedModel}
           currentVoice={selectedVoice}
@@ -426,50 +442,52 @@ const App: React.FC = () => {
           onOpenSettings={handleOpenSettings}
         />
 
-        <main className="flex-1 overflow-y-auto px-2 md:px-4 py-4 md:py-6 pb-48 scroll-smooth custom-scrollbar">
+        <main className="flex-1 overflow-y-auto px-2 md:px-4 py-4 md:py-6 scroll-smooth custom-scrollbar">
           <div className="max-w-3xl mx-auto space-y-3 md:space-y-4">
-            
+
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-10 md:py-20 text-center animate-in fade-in zoom-in duration-500 mt-10">
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-inner relative overflow-hidden">
-                    <div className="absolute inset-0 bg-white/30 backdrop-blur-sm"></div>
-                    <span className="text-3xl md:text-4xl relative z-10">🔮</span>
-                  </div>
-                  <h3 className="text-base md:text-lg font-bold text-gray-800 mb-2">等待咏唱指令</h3>
-                  <p className="text-xs md:text-sm text-gray-500 max-w-xs md:max-w-sm px-4 leading-relaxed">
-                    {apiKey ? '请在下方输入文字，连接不可视境界线...' : '请先点击右上角菜单设置 API Key，开启魔力回路。'}
-                  </p>
+              <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500 mt-10">
+                <div className="w-16 h-16 bg-gray-200/50 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" x2="12" y1="19" y2="22" />
+                  </svg>
+                </div>
+                <h3 className="text-[17px] font-semibold text-[#1C1C1E] mb-1">等待指令</h3>
+                <p className="text-[13px] text-[#8E8E93] max-w-sm px-4">
+                  {apiKey ? '请在下方输入文本' : '请先点击右上角设置 API 密钥'}
+                </p>
               </div>
             )}
 
             {messages.map((msg) => (
-              <AudioPlayer 
-                  key={msg.id}
-                  id={msg.id}
-                  text={msg.text} 
-                  audioUrl={msg.audioUrl} 
-                  cost={msg.cost}
-                  generationTime={msg.generationTime}
-                  status={msg.status}
-                  errorMessage={msg.errorMessage}
-                  onDelete={handleDeleteMessage}
-                  // Auto-Play Props
-                  isActive={activePlayingId === msg.id}
-                  onPlay={() => handleAudioPlay(msg.id)}
-                  onEnded={() => handleAudioEnded(msg.id)}
+              <AudioPlayer
+                key={msg.id}
+                id={msg.id}
+                text={msg.text}
+                audioUrl={msg.audioUrl}
+                cost={msg.cost}
+                generationTime={msg.generationTime}
+                status={msg.status}
+                errorMessage={msg.errorMessage}
+                voiceName={msg.voiceName}
+                onDelete={handleDeleteMessage}
+                // Auto-Play Props
+                isActive={activePlayingId === msg.id}
+                onPlay={() => handleAudioPlay(msg.id)}
+                onEnded={() => handleAudioEnded(msg.id)}
               />
             ))}
-
-            <div className="h-12"></div>
           </div>
         </main>
 
-        <InputArea 
-            onGenerate={handleGenerate} 
-            onStop={handleStop}
-            isLoading={isLoading} 
+        <InputArea
+          onGenerate={handleGenerate}
+          onStop={handleStop}
+          isLoading={isLoading}
         />
-        
+
         {showConsole && <DebugConsole logs={logs} onClear={() => setLogs([])} />}
       </div>
     </div>

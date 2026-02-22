@@ -1,56 +1,103 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Rikka-TTS | 邪王真眼共鸣装置</title>
-    <!-- 使用 CDN 加载 Tailwind 以简化构建流程 -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      html {
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
-      }
-      
-      /* 隐藏滚动条但保留功能 - 更加美观的魔法结界 */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(127, 86, 217, 0.2);
-        border-radius: 3px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: rgba(127, 86, 217, 0.5);
-      }
 
-      /* 自定义音频进度条 - 命运之线的具象化 */
-      input[type=range] {
-        -webkit-appearance: none;
-        width: 100%;
-        background: transparent;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Rikka-TTS | 邪王真眼共鸣装置</title>
+  <!-- 使用 CDN 加载 Tailwind 以简化构建流程 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background-color: #F2F2F7;
+    }
+
+    /* 隐藏滚动条但保留功能 - 更加美观的魔法结界 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* 自定义音频进度条 - 命运之线的具象化 */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type=range]:focus {
+      outline: none;
+    }
+
+    input[type=range]::-ms-track {
+      width: 100%;
+      cursor: pointer;
+      background: transparent;
+      border-color: transparent;
+      color: transparent;
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ios: {
+              bg: '#F2F2F7',
+              blue: '#007AFF',
+              green: '#34C759',
+              red: '#FF3B30',
+              gray: '#8E8E93',
+              gray2: '#AEAEB2',
+              gray3: '#C7C7CC',
+              gray4: '#D1D1D6',
+              gray5: '#E5E5EA',
+              gray6: '#F2F2F7',
+              label: '#1C1C1E',
+              secLabel: '#8E8E93',
+              sep: 'rgba(60,60,67,0.29)'
+            }
+          },
+          boxShadow: {
+            'ios': '0 4px 24px rgba(0, 0, 0, 0.04)',
+            'ios-sm': '0 1px 3px rgba(0, 0, 0, 0.05)',
+          },
+          animation: {
+            'spring': 'spring 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          }
+        }
       }
-      
-      input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-      }
-      
-      input[type=range]:focus {
-        outline: none;
-      }
-      
-      input[type=range]::-ms-track {
-        width: 100%;
-        cursor: pointer;
-        background: transparent; 
-        border-color: transparent;
-        color: transparent;
-      }
-    </style>
+    }
+  </script>
+
   <script type="importmap">
 {
   "imports": {
@@ -64,8 +111,10 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 h-screen overflow-hidden text-slate-800 font-sans">
-    <div id="root" class="h-full w-full"></div>
-    <script type="module" src="./index.tsx"></script>
-  </body>
+
+<body class="bg-gray-50 h-screen overflow-hidden text-slate-800 font-sans">
+  <div id="root" class="h-full w-full"></div>
+  <script type="module" src="./index.tsx"></script>
+</body>
+
 </html>
