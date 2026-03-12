@@ -2,19 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import pg from 'pg';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const { Pool } = pg;
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Zeabur expectsport 8080 or process.env.PORT
+const PORT = process.env.PORT || 8080;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -27,98 +22,72 @@ const connectionString =
 
 let pool = null;
 if (connectionString) {
-  pool = new Pool({
-    connectionString,
-    ssl: connectionString.includes('localhost') || connectionString.includes('127.0.0.1') 
-         ? false 
-         : { rejectUnauthorized: false }
-  });
-  
-  pool.on('error', (err) => {
-    console.error('❌ Unexpected error on idle client', err);
-  });
-
-  console.log('✅ PostgreSQL connection pool initialized.');
-  console.log(`📡 Detected DB URL: ${connectionString.replace(/:[^:@]+@/, ':****@')}`);
-} else {
-  console.warn('⚠️ WARN: DATABASE_URL is not set. Database features will not work.');
+  try {
+    pool = new Pool({
+      connectionString,
+      ssl: connectionString.includes('localhost') || connectionString.includes('127.0.0.1') 
+           ? false 
+           : { rejectUnauthorized: false }
+    });
+    pool.on('error', (err) => console.error('Pool Error:', err));
+    console.log('✅ DB Pool init');
+  } catch (e) {
+    console.error('❌ Pool init fail', e);
+  }
 }
 
-// Auto-create table
-const initDB = async () => {
-  if (!pool) return;
-  try {
-    console.log('🏗️  Checking database table...');
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS global_nicknames (
-        voice_id VARCHAR(255) PRIMARY KEY,
-        nickname VARCHAR(255) NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `;
-    await pool.query(createTableQuery);
-    console.log('✨ Database table global_nicknames is ready.');
-  } catch (err) {
-    console.error('❌ Error initializing database table:', err);
-  }
-};
-initDB();
-
-// Diagnostic Health Route
+// Minimal Health Check - NO WILDCARDS
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    dbConnected: !!pool,
-    envDetected: !!connectionString,
-    envKeys: Object.keys(process.env).filter(k => k.includes('DATABASE') || k.includes('POSTGRES')),
-    maskedUrl: connectionString ? connectionString.replace(/:[^:@]+@/, ':****@') : 'MISSING'
+  res.json({ 
+    status: 'ok', 
+    db: !!pool,
+    ts: Date.now()
   });
 });
 
 // API Routes
 app.get('/api/nicknames', async (req, res) => {
-  if (!pool) return res.status(510).json({ error: 'Database not available' });
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  if (!pool) return res.status(503).json({ error: 'No DB' });
   try {
     const result = await pool.query('SELECT voice_id, nickname FROM global_nicknames');
-    const nicknamesDict = result.rows.reduce((acc, row) => {
+    const dict = result.rows.reduce((acc, row) => {
       acc[row.voice_id] = row.nickname;
       return acc;
     }, {});
-    res.json(nicknamesDict);
+    res.json(dict);
   } catch (err) {
-    console.error('Error fetching nicknames:', err);
-    res.status(500).json({ error: 'Failed to fetch nicknames' });
+    res.status(500).json({ error: err.message });
   }
 });
 
 app.post('/api/nicknames', async (req, res) => {
-  if (!pool) return res.status(510).json({ error: 'Database not available' });
+  if (!pool) return res.status(503).json({ error: 'No DB' });
   const { voice_id, nickname } = req.body;
-  if (!voice_id || !nickname) return res.status(400).json({ error: 'voice_id and nickname are required' });
   try {
-    const upsertQuery = `
+    const q = `
       INSERT INTO global_nicknames (voice_id, nickname, updated_at)
       VALUES ($1, $2, CURRENT_TIMESTAMP)
       ON CONFLICT (voice_id) DO UPDATE SET nickname = EXCLUDED.nickname, updated_at = EXCLUDED.updated_at
       RETURNING *;
     `;
-    const result = await pool.query(upsertQuery, [voice_id, nickname]);
+    const result = await pool.query(q, [voice_id, nickname]);
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error updating nickname:', err);
-    res.status(500).json({ error: 'Failed to update nickname' });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Serve static React Frontend in production
-const distPath = path.join(__dirname, 'dist');
-app.use(express.static(distPath));
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
-});
+// Auto-init table
+if (pool) {
+  pool.query(`
+    CREATE TABLE IF NOT EXISTS global_nicknames (
+      voice_id VARCHAR(255) PRIMARY KEY,
+      nickname VARCHAR(255) NOT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `).then(() => console.log('✨ Table ready')).catch(e => console.error('❌ Table error', e));
+}
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 API Server running on port ${PORT}`);
 });
