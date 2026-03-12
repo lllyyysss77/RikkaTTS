@@ -19,7 +19,11 @@ app.use(express.json());
 
 // Database Connection
 // Zeabur will automatically inject DATABASE_URL or POSTGRES_URI
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URI;
+const connectionString = 
+  process.env.DATABASE_URL || 
+  process.env.POSTGRES_URL || 
+  process.env.POSTGRES_URI ||
+  process.env.DATABASE_PUBLIC_URL;
 
 let pool: Pool | null = null;
 if (connectionString) {
