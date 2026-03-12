@@ -92,8 +92,12 @@ if (pool) {
 const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath));
 
-// Fallback for SPA - use named parameter to avoid PathError in newer Express
-app.get('/:path*', (req, res) => {
+// Final fallback for SPA - use middleware instead of route pattern to avoid PathError
+app.use((req, res) => {
+  // Only serve index.html for non-API requests
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'API route not found' });
+  }
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
