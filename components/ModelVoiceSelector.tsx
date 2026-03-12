@@ -14,7 +14,7 @@ interface ModelVoiceSelectorProps {
   onOpenSettings: (view: 'upload') => void;
 }
 
-const NICKNAME_STORAGE_KEY = 'SILICONFLOW_VOICE_NICKNAMES';
+const NICKNAME_STORAGE_KEY = 'SILICONFLOW_VOICE_NICKNAMES'; // Kept as fallback during migration
 
 export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
   isOpen,
@@ -44,17 +44,28 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
     if (isOpen) {
       loadCustomVoices();
       setActiveTab('voice');
-      // Load nicknames
-      try {
-        const saved = localStorage.getItem(NICKNAME_STORAGE_KEY);
-        if (saved) {
-          setNicknames(JSON.parse(saved));
-        }
-      } catch (e) {
-        console.error("Failed to load nicknames", e);
-      }
+      // Load global nicknames from API
+      fetchNicknames();
     }
   }, [isOpen]);
+
+  const fetchNicknames = async () => {
+    try {
+      const res = await fetch('/api/nicknames');
+      if (res.ok) {
+        const data = await res.json();
+        setNicknames(data);
+      } else {
+        // Fallback to local storage if API fails
+        const saved = localStorage.getItem(NICKNAME_STORAGE_KEY);
+        if (saved) setNicknames(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Failed to load global nicknames", e);
+      const saved = localStorage.getItem(NICKNAME_STORAGE_KEY);
+      if (saved) setNicknames(JSON.parse(saved));
+    }
+  };
 
   const loadCustomVoices = async () => {
     if (!apiKey || !apiKey.trim()) {
@@ -81,9 +92,22 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
     }
   };
 
-  const handleSaveNickname = (id: string) => {
+  const handleSaveNickname = async (id: string) => {
     const newNicknames = { ...nicknames, [id]: editNameValue };
     setNicknames(newNicknames);
+    
+    // Save to global DB via API
+    try {
+      await fetch('/api/nicknames', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_id: id, nickname: editNameValue })
+      });
+    } catch (e) {
+      console.error('Failed to sync nickname globally', e);
+    }
+
+    // Local fallback
     localStorage.setItem(NICKNAME_STORAGE_KEY, JSON.stringify(newNicknames));
     setEditingId(null);
 
