@@ -30,19 +30,27 @@ if (connectionString) {
   // Use ssl: { rejectUnauthorized: false } for many hosted DBs (like Zeabur/Supabase)
   pool = new Pool({
     connectionString,
-    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
+    ssl: connectionString.includes('localhost') || connectionString.includes('127.0.0.1') 
+         ? false 
+         : { rejectUnauthorized: false }
   });
-  console.log('PostgreSQL connection pool initialized.');
+  
+  pool.on('error', (err) => {
+    console.error('❌ Unexpected error on idle client', err);
+  });
+
+  console.log('✅ PostgreSQL connection pool initialized.');
   // Log masked connection string for debugging
-  console.log(`Connection string detected: ${connectionString.replace(/:[^:@]+@/, ':****@')}`);
+  console.log(`📡 Detected DB URL: ${connectionString.replace(/:[^:@]+@/, ':****@')}`);
 } else {
-  console.warn('WARN: DATABASE_URL is not set. Database features will not work.');
+  console.warn('⚠️ WARN: DATABASE_URL is not set. Database features will not work.');
 }
 
 // Auto-create table if it doesn't exist
 const initDB = async () => {
   if (!pool) return;
   try {
+    console.log('🏗️  Checking database table...');
     const createTableQuery = `
       CREATE TABLE IF NOT EXISTS global_nicknames (
         voice_id VARCHAR(255) PRIMARY KEY,
@@ -51,12 +59,23 @@ const initDB = async () => {
       );
     `;
     await pool.query(createTableQuery);
-    console.log('Database table global_nicknames checked/created.');
+    console.log('✨ Database table global_nicknames is ready.');
   } catch (err) {
-    console.error('Error initializing database table:', err);
+    console.error('❌ Error initializing database table:', err);
   }
 };
 initDB();
+
+// Diagnostic Health Route
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    dbConnected: !!pool,
+    envDetected: !!connectionString,
+    envKeys: Object.keys(process.env).filter(k => k.includes('DATABASE') || k.includes('POSTGRES')),
+    maskedUrl: connectionString ? connectionString.replace(/:[^:@]+@/, ':****@') : 'MISSING'
+  });
+});
 
 // API Routes
 app.get('/api/nicknames', async (req, res) => {
