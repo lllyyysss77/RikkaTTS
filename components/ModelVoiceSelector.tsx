@@ -39,6 +39,7 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
   const [editNameValue, setEditNameValue] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (isOpen) {
@@ -50,6 +51,7 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
   }, [isOpen]);
 
   const fetchNicknames = async () => {
+    setSyncStatus('loading');
     try {
       console.log('🔄 Syncing global nicknames...');
       const res = await fetch(`/api/nicknames?t=${Date.now()}`);
@@ -57,12 +59,15 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
         const data = await res.json();
         console.log('✅ Global nicknames fetched:', Object.keys(data).length);
         setNicknames(data);
+        setSyncStatus('success');
       } else {
+        setSyncStatus('error');
         // Fallback to local storage if API fails
         const saved = localStorage.getItem(NICKNAME_STORAGE_KEY);
         if (saved) setNicknames(JSON.parse(saved));
       }
     } catch (e) {
+      setSyncStatus('error');
       console.error("Failed to load global nicknames", e);
       const saved = localStorage.getItem(NICKNAME_STORAGE_KEY);
       if (saved) setNicknames(JSON.parse(saved));
@@ -102,13 +107,17 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
     
     // Save to global DB via API
     try {
-      await fetch('/api/nicknames', {
+      const res = await fetch('/api/nicknames', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voice_id: id, nickname: editNameValue })
       });
+      if (!res.ok) throw new Error('API Rejection');
+      setSyncStatus('success');
     } catch (e) {
       console.error('Failed to sync nickname globally', e);
+      setSyncStatus('error');
+      alert('⚠️ 全局同步失败，名称仅保存在本地。请检查 Zeabur 数据库连接。');
     }
 
     // Local fallback
@@ -227,7 +236,12 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-2 px-1">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">我的音色库</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">我的音色库</h4>
+                    {syncStatus === 'loading' && <Loader2 className="w-2.5 h-2.5 text-blue-400 animate-spin" />}
+                    {syncStatus === 'success' && <div className="w-1.5 h-1.5 rounded-full bg-green-500" title="已连接云端数据库" />}
+                    {syncStatus === 'error' && <div className="w-1.5 h-1.5 rounded-full bg-red-500" title="数据库连接失败" />}
+                  </div>
                   <button onClick={loadCustomVoices} disabled={isLoadingVoices}>
                     <RefreshCw className={`w-3 h-3 text-gray-400 ${isLoadingVoices ? 'animate-spin' : ''}`} />
                   </button>
