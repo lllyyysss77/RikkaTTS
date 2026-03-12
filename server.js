@@ -1,10 +1,11 @@
 import express from 'express';
 import cors from 'cors';
-import { Pool } from 'pg';
+import pg from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const { Pool } = pg;
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,16 +19,14 @@ app.use(cors());
 app.use(express.json());
 
 // Database Connection
-// Zeabur will automatically inject DATABASE_URL or POSTGRES_URI
 const connectionString = 
   process.env.DATABASE_URL || 
   process.env.POSTGRES_URL || 
   process.env.POSTGRES_URI ||
   process.env.DATABASE_PUBLIC_URL;
 
-let pool: Pool | null = null;
+let pool = null;
 if (connectionString) {
-  // Use ssl: { rejectUnauthorized: false } for many hosted DBs (like Zeabur/Supabase)
   pool = new Pool({
     connectionString,
     ssl: connectionString.includes('localhost') || connectionString.includes('127.0.0.1') 
@@ -40,13 +39,12 @@ if (connectionString) {
   });
 
   console.log('✅ PostgreSQL connection pool initialized.');
-  // Log masked connection string for debugging
   console.log(`📡 Detected DB URL: ${connectionString.replace(/:[^:@]+@/, ':****@')}`);
 } else {
   console.warn('⚠️ WARN: DATABASE_URL is not set. Database features will not work.');
 }
 
-// Auto-create table if it doesn't exist
+// Auto-create table
 const initDB = async () => {
   if (!pool) return;
   try {
@@ -79,22 +77,14 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.get('/api/nicknames', async (req, res) => {
-  if (!pool) {
-    return res.status(503).json({ error: 'Database not available' });
-  }
-  
-  // Prevent browser caching
+  if (!pool) return res.status(510).json({ error: 'Database not available' });
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  
   try {
     const result = await pool.query('SELECT voice_id, nickname FROM global_nicknames');
-    
-    // Convert to a dictionary: { "voiceId1": "Nick1", "voiceId2": "Nick2" }
     const nicknamesDict = result.rows.reduce((acc, row) => {
       acc[row.voice_id] = row.nickname;
       return acc;
-    }, {} as Record<string, string>);
-    
+    }, {});
     res.json(nicknamesDict);
   } catch (err) {
     console.error('Error fetching nicknames:', err);
@@ -103,25 +93,14 @@ app.get('/api/nicknames', async (req, res) => {
 });
 
 app.post('/api/nicknames', async (req, res) => {
-  if (!pool) {
-    return res.status(503).json({ error: 'Database not available' });
-  }
-  
+  if (!pool) return res.status(510).json({ error: 'Database not available' });
   const { voice_id, nickname } = req.body;
-  
-  if (!voice_id || !nickname) {
-    return res.status(400).json({ error: 'voice_id and nickname are required' });
-  }
-  
+  if (!voice_id || !nickname) return res.status(400).json({ error: 'voice_id and nickname are required' });
   try {
-    // Upsert (Insert or Update)
     const upsertQuery = `
       INSERT INTO global_nicknames (voice_id, nickname, updated_at)
       VALUES ($1, $2, CURRENT_TIMESTAMP)
-      ON CONFLICT (voice_id) 
-      DO UPDATE SET 
-        nickname = EXCLUDED.nickname,
-        updated_at = EXCLUDED.updated_at
+      ON CONFLICT (voice_id) DO UPDATE SET nickname = EXCLUDED.nickname, updated_at = EXCLUDED.updated_at
       RETURNING *;
     `;
     const result = await pool.query(upsertQuery, [voice_id, nickname]);
@@ -133,15 +112,11 @@ app.post('/api/nicknames', async (req, res) => {
 });
 
 // Serve static React Frontend in production
-if (process.env.NODE_ENV === 'production') {
-  const distPath = path.join(__dirname, 'dist');
-  app.use(express.static(distPath));
-  
-  // Catch-all route to serve strictly index.html for SPA routing
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // Start Server
 app.listen(PORT, () => {

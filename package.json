@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "run-p dev:vite dev:server",
     "dev:vite": "vite",
-    "dev:server": "nodemon --exec ts-node server.ts",
+    "dev:server": "nodemon server.js",
     "build": "tsc && vite build",
-    "start": "node --experimental-specifier-resolution=node --loader ts-node/esm server.ts || ts-node server.ts",
+    "start": "node server.js",
     "preview": "vite preview"
   },
   "dependencies": {
