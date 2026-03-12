@@ -88,6 +88,15 @@ if (pool) {
   `).then(() => console.log('✨ Table ready')).catch(e => console.error('❌ Table error', e));
 }
 
+// Serve Frontend
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
+
+// Fallback for SPA - use named parameter to avoid PathError in newer Express
+app.get('/:path*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 API Server running on port ${PORT}`);
 });
