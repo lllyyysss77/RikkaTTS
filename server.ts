@@ -27,12 +27,14 @@ const connectionString =
 
 let pool: Pool | null = null;
 if (connectionString) {
+  // Use ssl: { rejectUnauthorized: false } for many hosted DBs (like Zeabur/Supabase)
   pool = new Pool({
     connectionString,
-    // Add SSL for remote hosted databases, but usually Zeabur internal doesn't strictly need it if in same VPC.
-    // Uncomment if connection fails: ssl: { rejectUnauthorized: false }
+    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
   });
   console.log('PostgreSQL connection pool initialized.');
+  // Log masked connection string for debugging
+  console.log(`Connection string detected: ${connectionString.replace(/:[^:@]+@/, ':****@')}`);
 } else {
   console.warn('WARN: DATABASE_URL is not set. Database features will not work.');
 }
@@ -61,6 +63,9 @@ app.get('/api/nicknames', async (req, res) => {
   if (!pool) {
     return res.status(503).json({ error: 'Database not available' });
   }
+  
+  // Prevent browser caching
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   
   try {
     const result = await pool.query('SELECT voice_id, nickname FROM global_nicknames');

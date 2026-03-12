@@ -51,9 +51,11 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
 
   const fetchNicknames = async () => {
     try {
-      const res = await fetch('/api/nicknames');
+      console.log('🔄 Syncing global nicknames...');
+      const res = await fetch(`/api/nicknames?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ Global nicknames fetched:', Object.keys(data).length);
         setNicknames(data);
       } else {
         // Fallback to local storage if API fails
@@ -77,6 +79,8 @@ export const ModelVoiceSelector: React.FC<ModelVoiceSelectorProps> = ({
     setIsLoadingVoices(true);
     setVoiceError(null);
     try {
+      // Also refresh nicknames when reloading voices
+      fetchNicknames();
       const voices = await fetchCustomVoices(apiKey);
       setCustomVoices(voices);
     } catch (e) {
